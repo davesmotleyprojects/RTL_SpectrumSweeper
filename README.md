@@ -22,7 +22,7 @@ to *not* use the --nolabels option when calling flatten.py) The correct version 
 Usage
 -----
 
-Start RTL_SpectrumSweepr by running ``python RTL_SpectrumSweeper.py [opt1] [opt2] [FILENAME]``.
+Start RTL_SpectrumSweeper by running    ``python RTL_SpectrumSweeper.py [opt1] [opt2] [FILENAME]``.
 
 [opt1] includes all (or none) of the RTL_SpectrumSweeper option. These are:
 

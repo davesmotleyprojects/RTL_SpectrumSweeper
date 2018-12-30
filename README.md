@@ -14,7 +14,8 @@ Requirements
 - heatmap.py (see note)
 - flatten.py (see note)
 
-Note: The version of heatmap.py required must include the --nolabels option. The correct version can be found here:
+Note: The version of heatmap.py required must include the --nolabels option. (OR you could modify the  RTL_SpectrumSweeper 
+to *not* use the --nolabels option when calling flatten.py) The correct version of heatmap.py can be found here:
 (https://github.com/davesmotleyprojects/rtl-sdr-misc). I will also include them with the RTL_SpectrumSweeper application. 
 
 

@@ -2,16 +2,20 @@
 
 rtl_power GUI to automate spectrum sweeping.  
 
+Note: This is currently at version 1.0.0. It is filled with a lot of debugging print statements. I'm still playing around 
+with it.     
+
+
 Requirements
 ------------
 
 - Python >= 3.3
 - rtl_power 
 - heatmap.py (see note)
-- flatten.py
+- flatten.py (see note)
 
 Note: The version of heatmap.py required must include the --nolabels option. The correct version can be found here:
-(https://github.com/davesmotleyprojects/rtl-sdr-misc)
+(https://github.com/davesmotleyprojects/rtl-sdr-misc). I will also include them with the RTL_SpectrumSweeper application. 
 
 
 Usage
@@ -41,14 +45,12 @@ Start RTL_SpectrumSweepr by running ``python RTL_SpectrumSweeper.py [opt1] [opt2
 Examples
 -----
 
-'''
-python RTL_SpectrumSweeper -i 3s -g 28 -f 88M:108M:10k test.csv
-'''
+> python RTL_SpectrumSweeper -i 3s -g 28 -f 88M:108M:10k test.csv
+
 Will perform continuous sweeps of the FM broadcast spectrum from 88 MHz to 108 MHz. At 5kHz steps, this will result in 2048 FFT bins. Results are written to test.csv, with the waterfall image written to test.png. With no RTL_SpectrumSweeper options (the ones listed are for rtl_power) the default waterfall image will be forecd to the window aspect ratio (at 2048 bins this is about 675 pixels high). After the window fills, which will take a little over 30 minutes, it will stop.   
 
-'''
-python RTL_SpectrumSweeper.py -a 100 -s 250 -o -125000000 -i 3s -g 20 -f 132000k:132200k:100 test.csv 
-'''
+> python RTL_SpectrumSweeper.py -a 100 -s 250 -o -125000000 -i 3s -g 20 -f 132000k:132200k:100 test.csv 
+
 (With a 125MHz upconverter connected) This will perform continuous sweeps of the 40 meter (7.000 MHz to 7.200 MHz) band. At 100Hz steps, this will result in 1024 FFT bins. Results are written to test.csv, with the waterfall image written to test.png. The '-a 100' option will start the waterfall image window at 100 pixels high, and the waterfall image will fill it from top to bottom. The '-s 250' option will cause the program to stop after 250 sweeps. The '-o -125000000' option will change the x-axis tick labels to be 7.000 MHz to 7.200 MHz. 
 
 

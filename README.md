@@ -25,17 +25,17 @@ Start RTL_SpectrumSweepr by running ``python RTL_SpectrumSweeper.py [opt1] [opt2
 
 [opt1] includes all (or none) of the RTL_SpectrumSweeper option. These are:
 
--a (set aspect ratio) valid values are [0,1,N] (integer) (default = 1). 
+> -a (set aspect ratio) valid values are [0,1,N] (integer) (default = 1). 
    - A value of 0 will allow the waterfall image to stretch/shrink to fill the waterfall image space. 
    - A value of 1 will force the waterfall image to fit the aspect ratio of the waterfall image space.
    - A value of N will force the waterfall image space to a height of N pixels.
  
- -s (set autostop value) valid values are [0,1,N] (integer) (default = 1).
+> -s (set autostop value) valid values are [0,1,N] (integer) (default = 1).
    - A value of 0 will disable the autostop feature.  
    - A value of 1 will autostop the spectrum sweep when the waterfall image space is filled. 
    - A value of N will autostop the spectrum sweep when the number of sweeps performed = N. 
 
- -o (set the frequency offset value) valid values are integer values in Hz. (default = 0).
+> -o (set the frequency offset value) valid values are integer values in Hz. (default = 0).
    - This value will rescale the x-axis frequency values. (that's it). This is useful when using an upconverter. 
      For example, when using a "Ham It Up" the correct value would be '-o -125000000'.    
 

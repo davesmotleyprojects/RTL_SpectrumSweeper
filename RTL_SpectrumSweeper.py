@@ -148,19 +148,19 @@ def process_args():
             skip = False
         else:
             if (arg == "-s"):
-                g.opt_str += str(" -s" + sys.argv[i+1])
+                g.opt_str += str(" -s " + sys.argv[i+1])
                 g.stop = int(sys.argv[i+1])
                 print("Set stop: {}" .format(g.stop))
                 skip=True
                 pass
             elif (arg == "-a"):
-                g.opt_str += str(" -a" + sys.argv[i+1])
+                g.opt_str += str(" -a " + sys.argv[i+1])
                 g.aspect = int(sys.argv[i+1])
                 print("Set aspect: {}" .format(g.aspect))
                 skip=True
                 pass
             elif (arg == "-o"):
-                g.opt_str += str(" -o" + sys.argv[i+1])
+                g.opt_str += str(" -o " + sys.argv[i+1])
                 g.offset = float(sys.argv[i+1])
                 print("Set offset: {}" .format(g.offset))
                 skip=True

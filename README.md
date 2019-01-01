@@ -1,10 +1,8 @@
 # RTL_SpectrumSweeper
 
-rtl_power GUI to automate spectrum sweeping.  
+rtl_power GUI to automate spectrum sweeping.      
 
-Note: I'm still playing around with it. It is functional but filled with a lot of debugging statements.     
-
-Screenshots
+Screenshot
 ------------
 
 ![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
@@ -15,10 +13,10 @@ Requirements
 - Python >= 3.3
 - rtl_power 
 - heatmap.py (see note)
-- flatten.py (see note)
+- flatten.py
 
 Note: The version of heatmap.py required must include the --nolabels option. (OR you could modify the  RTL_SpectrumSweeper 
-to *not* use the --nolabels option when calling flatten.py) The correct version of heatmap.py can be found here:
+to *not* use the --nolabels option when calling heatmap.py) The correct version of heatmap.py can be found here:
 (https://github.com/davesmotleyprojects/rtl-sdr-misc). I will also include them with the RTL_SpectrumSweeper application. 
 
 
@@ -27,17 +25,17 @@ Usage
 
 Start RTL_SpectrumSweeper by running    ``python RTL_SpectrumSweeper.py [opt1] [opt2] [FILENAME]``.
 
-[opt1] includes all (or none) of the RTL_SpectrumSweeper option. These are:
+[opt1] includes all (or none) of the RTL_SpectrumSweeper options. These are:
 
 > -a (set aspect ratio) valid values are [0,1,N] (integer) (default = 1). 
    - A value of 0 will allow the waterfall image to stretch/shrink to fill the waterfall image space. 
    - A value of 1 will force the waterfall image to fit the aspect ratio of the waterfall image space.
    - A value of N will force the waterfall image space to a height of N pixels.
  
-> -s (set autostop value) valid values are [0,1,N] (integer) (default = 1).
-   - A value of 0 will disable the autostop feature.  
-   - A value of 1 will autostop the spectrum sweep when the waterfall image space is filled. 
-   - A value of N will autostop the spectrum sweep when the number of sweeps performed = N. 
+> -s (set stop value) valid values are [0,1,N] (integer) (default = 1).
+   - A value of 0 will disable the auto-stop feature.  
+   - A value of 1 will auto-stop the spectrum sweep when the waterfall image space is filled. 
+   - A value of N will auto-stop the spectrum sweep when the number of sweeps performed = N. 
 
 > -o (set the frequency offset value) valid values are integer values in Hz. (default = 0).
    - This value will rescale the x-axis frequency values. (that's it). This is useful when using an upconverter. 
@@ -77,7 +75,7 @@ Windows:
 
 4. place the heatmap.py and flatten.py files in the same directory as RTL_SpectrumSweeper. 
 
-    (I'll include the files that I used with RTL_SpetrumSweeper 
+    (I'll include the files that I used with RTL_SpetrumSweeper) 
 
 5. open a command prompt window and launch the application
 

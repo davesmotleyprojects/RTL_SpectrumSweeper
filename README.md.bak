@@ -2,9 +2,12 @@
 
 rtl_power GUI to automate spectrum sweeping.  
 
-Note: This is currently at version 1.0.0. It is filled with a lot of debugging print statements. I'm still playing around 
-with it.     
+Note: I'm still playing around with it. It is functional but filled with a lot of debugging statements.     
 
+Screenshots
+------------
+
+.. image:: https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png
 
 Requirements
 ------------

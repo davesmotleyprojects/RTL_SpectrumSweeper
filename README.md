@@ -7,7 +7,7 @@ Note: I'm still playing around with it. It is functional but filled with a lot o
 Screenshots
 ------------
 
-!(https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
 
 Requirements
 ------------

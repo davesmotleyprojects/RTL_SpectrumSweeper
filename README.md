@@ -7,17 +7,21 @@ Screenshot
 
 ![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
 
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot3.png)
+Screenshot of FM Band sweep using "--palette custom --rgbxy 0 255 255 25 150"
+
 Requirements
 ------------
 
 - Python >= 3.3
 - rtl_power 
 - heatmap.py (see note)
-- flatten.py
+- flatten.py (see note)
 
-Note: The version of heatmap.py required must include the --nolabels option. (OR you could modify the  RTL_SpectrumSweeper 
-to *not* use the --nolabels option when calling heatmap.py) The correct version of heatmap.py can be found here:
-(https://github.com/davesmotleyprojects/rtl-sdr-misc). I will also include them with the RTL_SpectrumSweeper application. 
+Note: The correct versions of heatmap.py and flatten.py that work with this application can be found here:
+(https://github.com/davesmotleyprojects/rtl-sdr-misc). When RTL_SpectrumSweeper is executed, it will check for the existence of these files. 
+If it is unable to find them, it will attempt to download them for you from the location above. It does not currently verify that the files
+in the current directory are the most recent.  
 
 
 Usage
@@ -39,7 +43,16 @@ Start RTL_SpectrumSweeper by running    ``python RTL_SpectrumSweeper.py [opt1] [
 
 > -o (set the frequency offset value) valid values are integer values in Hz. (default = 0).
    - This value will rescale the x-axis frequency values. (that's it). This is useful when using an upconverter. 
-     For example, when using a "Ham It Up" the correct value would be '-o -125000000'.    
+     For example, when using a "Ham It Up" the correct value would be '-o -125000000'.  
+
+> --palette (set color palette) valid values are "default, extended, charolastra, twente, custom". 
+   - To use the --rgbxy settings the palette must be set to "custom"
+
+> --rgbxy (sets R G B color, Contrast, Brightness) valid values are all [0-255]. 
+   - R G B values correspond to RGB color codes. (e.g. "0 255 255" = CYAN, "0 255 127" = SPRING GREEN)
+   - X sets contrast (color start index). 
+   - Y sets brightness (color stop index). 
+   - X value must be less than Y value.') 	 
 
 [opt2] [FILENAME] are the options required for rtl_power. These options are un-modified. Enter values exactly as you would when using rtl_power from the command line.  
 
@@ -73,9 +86,9 @@ Windows:
    
 3. add the path to rtl_power to the Environment Variables
 
-4. place the heatmap.py and flatten.py files in the same directory as RTL_SpectrumSweeper. 
+4. Only if needed, place the heatmap.py and flatten.py files in the same directory as RTL_SpectrumSweeper. 
 
-    (I'll include the files that I used with RTL_SpetrumSweeper) 
+    (If the files don't exist, RTL_SpetrumSweeper will attempt to download the latest files.) 
 
 5. open a command prompt window and launch the application
 

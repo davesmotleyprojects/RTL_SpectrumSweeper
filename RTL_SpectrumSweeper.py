@@ -30,6 +30,7 @@
 /* ######################################################################### */
 """
 
+import os
 import sys
 import time
 import subprocess
@@ -47,7 +48,7 @@ import numpy as np
 import tkinter as tk
 
 
-version = '1.0.0'
+version = '1.1.0'
 
 ###############################################################################
 #                                                                             #
@@ -58,12 +59,96 @@ version = '1.0.0'
 """############################################################################
 
     Version 1.0.0: (20181229) Initial release.
- 
+    Version 1.1.0: (20190105) Added a debug section to add args as though it
+    was executed from a command prompt when debugging with an IDE. Added an
+    automatic file downloader for heatmap.py and flatten.py, and removed
+    them from the git location to avoid duplication. Added support for 
+    custom palettes (--palette and --rgbxy). Fixed automation interval to use
+    milliseconds not seconds. Added check to avoid processing csv file if it
+    has not changed since last update.  
 
 ############################################################################"""
 
 print("\nRTL_SpectrumScanner.py version {}\n" .format(version))
 
+
+
+"""############################################################################
+
+    IDE Test Strings
+    
+    Uncomment this section to be able to execute/debug within an IDE like geany.
+    The "cmd_str" will be parsed into sys.args as though they were input from
+    the command line. DO NOT FORGET to comment this back out when done.  
+
+############################################################################"""
+
+'''
+# here are some color codes for reference. copy these into a cmd_str to use. 
+# '--palette custom'                                # default: BRIGHT YELLOW
+# '--palette custom --rgbxy 0 255 255 15 140'       # CYAN
+# '--palette custom --rgbxy 127 255 212 15 110'     # AQUAMARINE
+# '--palette custom --rgbxy 255 20 147 10 110'      # HOT_PINK
+# '--palette custom --rgbxy 160 32 240 0 110'       # DEEP_PURPLE
+# '--palette custom --rgbxy 0 255 127 10 140'       # SPRING_GREEN
+
+# some rtl_power settings for reference
+# '-i 3s -e 60m -g 28 -f 88M:108M:5k test.csv'      # 1 hours scan of FM Stations 
+# '-i 3s -g 28 -f 95000k:97500k:1k test.csv'        # hi-res scan of FM portion 
+# '-i 1m -g 28 -f 27M:1000M:1M test.csv'            # scan of the rtl-sdr range up to 1GHz
+# '-i 3s -g 28 -f 132000k:132200k:100 test.csv'     # scan of entire 40m ham band 
+
+
+#cmd_str = "RTL_SpectrumSweeper -a 75 -s 15 --palette custom -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv"  
+cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette charolastra -c 25% -i 3s -g 28 -f 88M:108M:10k test.csv"         
+#cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette custom --rgbxy 0 255 255 25 150 -c 25% -i 3s -e 60m -g 28 -f 88M:108M:10k test.csv"        
+#cmd_str = "RTL_SpectrumSweeper -a 200 -s 100 -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv" 
+
+print(cmd_str)
+sys.argv = cmd_str.split()
+'''
+
+
+"""############################################################################
+
+    Confirm and if needed Download Required Files
+
+############################################################################"""
+
+heatmap_url = "https://github.com/davesmotleyprojects/rtl-sdr-misc/raw/master/heatmap/heatmap.py"
+heatmap_path = os.path.join(sys.path[0], "heatmap.py")
+flatten_url = "https://github.com/davesmotleyprojects/rtl-sdr-misc/raw/master/heatmap/flatten.py"
+flatten_path = os.path.join(sys.path[0], "flatten.py")
+
+urlretrieve = lambda a, b: None
+try:
+    import urllib.request
+    urlretrieve = urllib.request.urlretrieve
+except:
+    import urllib
+    urlretrieve = urllib.urlretrieve
+    
+if not os.path.isfile(heatmap_path):
+    print('\nUnable to locate heatmap.py file at {}' .format(heatmap_path))
+    try:
+        print('Attempting to download it from {}' .format(heatmap_url))
+        urlretrieve(heatmap_url, heatmap_path)
+        print('Download successful')
+    except Exception as e:
+        print('Exception occurred while attempting download.\n{}\n' .format(e))
+        print('Please download heatmap.py and place it in the current directory.')
+        sys.exit(1)
+        
+if not os.path.isfile(flatten_path):
+    print('\nUnable to locate flatten.py file at {}' .format(flatten_path))
+    try:
+        print('Attempting to download it from {}' .format(flatten_url))
+        urlretrieve(flatten_url, flatten_path)
+        print('Download successful')
+    except Exception as e:
+        print('Exception occurred while attempting download.\n{}\n' .format(e))
+        print('Please download flatten.py and place it in the current directory.')
+        sys.exit(1)
 
 
 """############################################################################
@@ -76,11 +161,12 @@ class global_vars:
     
     def __init__(self):
 
-        self.filename = "test"
+        self.filename = ""
         self.sweeptime = 3
 
-        self.rtl_str = ""
         self.opt_str = ""
+        self.rtl_str = ""
+        self.hmp_str = ""
         
         self.stop = 1       # 0 = autostop disabled
                             # 1 = autostop when window filled
@@ -89,9 +175,14 @@ class global_vars:
                             # 1 = force image aspect ratio to window
                             # N = force waterfall to N pixel height
         self.offset = 0
+        
+        self.trace_color = "#FFFF00"
 
         self.ready = False
         self.done = False
+        
+        self.csv_path = ""
+        self.old_csv_size = 0
 
         root = tk.Tk()
         self.scrn_width_in = root.winfo_screenmmwidth() / 25.4
@@ -114,13 +205,13 @@ class global_vars:
         self.rtl_proc = None
 
         self.anim = None 
-        self.anim_intvl = self.sweeptime
+        self.anim_intvl = self.sweeptime * 1000
 
         self.x_vals = []
         self.y_vals = []
         
         
-print("Initializing global variables... ", end='', flush=True)   
+print("\nInitializing global variables... ", end='', flush=True)   
 g = global_vars()
 print("done")
 
@@ -138,38 +229,56 @@ def process_args():
     print("num args {}" .format(len(sys.argv)))
     print("arg list: {}" .format(str(sys.argv)))
         
-    skip = False
-    g.rtl_str = "rtl_power -P"
+    skip = 0
     g.opt_str = ""
+    g.rtl_str = "rtl_power -P"
+    g.hmp_str = "python heatmap.py --nolabels"
+    
     
     for i in range(1, len(sys.argv)):
         arg = sys.argv[i]
         if (skip):
-            skip = False
+            skip -= 1
         else:
             if (arg == "-s"):
                 g.opt_str += str(" -s " + sys.argv[i+1])
                 g.stop = int(sys.argv[i+1])
                 print("Set stop: {}" .format(g.stop))
-                skip=True
+                skip=1
                 pass
             elif (arg == "-a"):
                 g.opt_str += str(" -a " + sys.argv[i+1])
                 g.aspect = int(sys.argv[i+1])
                 print("Set aspect: {}" .format(g.aspect))
-                skip=True
+                skip=1
                 pass
             elif (arg == "-o"):
                 g.opt_str += str(" -o " + sys.argv[i+1])
                 g.offset = float(sys.argv[i+1])
                 print("Set offset: {}" .format(g.offset))
-                skip=True
+                skip=1
+                pass
+            elif (arg == "--palette"):
+                g.hmp_str += str(" --palette " + sys.argv[i+1])
+                skip=1
+                pass
+            elif (arg == "--rgbxy"):
+                R = int(sys.argv[i+1]); G = int(sys.argv[i+2]); B = int(sys.argv[i+3]);
+                g.hmp_str += str(" --rgbxy " + sys.argv[i+1])
+                g.hmp_str += str(" " + sys.argv[i+2])
+                g.hmp_str += str(" " + sys.argv[i+3])
+                g.hmp_str += str(" " + sys.argv[i+4])
+                g.hmp_str += str(" " + sys.argv[i+5])
+                g.trace_color = ("#{:02X}{:02X}{:02X}" .format(R,G,B))
+                print("Trace Color: {}" .format(g.trace_color))
+                skip=5
                 pass
             elif (arg == "-P"):
                 #do nothing. This is always added by default
                 pass
             else:
                 if(arg.find('.csv') != -1):
+                    g.csv_path = os.path.join(sys.path[0], arg)
                     g.filename = arg.strip('.csv')
                     print("Filename is {}.csv" .format(g.filename))
                 if(arg == "-i"):
@@ -179,7 +288,9 @@ def process_args():
                     skip=True
                 g.rtl_str += str(" " + arg)
                 
-    #print("rtl_power cmd_str = '{}'" .format(g.rtl_str))
+    print("\n")
+    print("options = '{} {}'" .format(g.opt_str, g.hmp_str))
+    print("{}" .format(g.rtl_str))
         
     time.sleep(3)
 
@@ -224,20 +335,11 @@ def start_rtl_power_process():
         Always using the '-P' option fixes this problem. 
         #####################################################################'''
          
-        #g.rtl_str = ("rtl_power -P -i 3s -e 60m -g 28 -f 88M:108M:5k {}.csv" .format(g.filename)) 
-        #g.rtl_str = ("rtl_power -P -i 3s -g 28 -f 95M:97500k:1k {}.csv" .format(g.filename)) 
-        #g.rtl_str = ("rtl_power -P -i 3s -g 28 -f 95000k:97500k:10k {}.csv" .format(g.filename))
-        #g.rtl_str = ("rtl_power -P -i {}s -g 28 -f 95000k:97500k:2.5k {}.csv" .format(g.sweeptime, g.filename))
-        #g.rtl_str = ("rtl_power -P -i 1m -g 28 -f 27M:1000M:1M {}.csv" .format(g.filename))
-        #g.rtl_str = ("rtl_power -P -i 3s -g 28 -f 132000k:132200k:100 {}.csv" .format(g.filename)) 
-        #g.rtl_str = ("rtl_power -P -i 3s -g 18 -f 132010k:132045k:50 {}.csv" .format(g.filename)) 
-        
-        
         print(g.rtl_str)
         cmd = g.rtl_str.split()
         print(cmd)
         
-        g.fig_title = ("RTL_SpectrumSweeper using: '{}' for '{}' started {}" .format(g.opt_str, g.rtl_str, datetime.datetime.now()))
+        g.fig_title = ("RTL_SpectrumSweeper using: '{} {}' for '{}' started {}" .format(g.opt_str, g.hmp_str, g.rtl_str, datetime.datetime.now()))
 
         g.rtl_proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
@@ -377,6 +479,13 @@ def animation_poll(i):
         # while it is running the poll will return None. 
         if (g.rtl_proc.poll() == None):
             
+            cur_csv_size = os.path.getsize(g.csv_path)
+            if (g.old_csv_size == cur_csv_size):
+                print("no new data to process yet. Exiting.")
+                return
+
+            g.old_csv_size = cur_csv_size
+        
             update_csv_data()
             
             update_waterfall()
@@ -397,7 +506,7 @@ def animation_poll(i):
             
             try:
                 g.ax1.clear()
-                g.ax1.plot(g.x_vals, g.y_vals, color='yellow', linewidth=0.75) 
+                g.ax1.plot(g.x_vals, g.y_vals, color=g.trace_color, linewidth=0.75) 
                 y_min = min(g.y_vals); y_max = max(g.y_vals)
                 y_diff = y_max-y_min; y_margin = y_diff *0.10
                 g.ax1.set_ylim([min(g.y_vals)-y_margin, max(g.y_vals)+y_margin])
@@ -414,12 +523,12 @@ def animation_poll(i):
 
             
             if(g.done):
-                print("waterfall image is full and autostop was selected.")
+                print("\nauto-stop criteria was met.")
                 # stop the animation polling. 
                 g.anim.event_source.stop()
                 g.rtl_proc.terminate()
                 print("The rtl_power subprocess was terminated.")
-                
+                    
         else:
             print("rtl_power subprocess finished!")
             # stop the animation polling. 
@@ -443,7 +552,7 @@ def update_csv_data():
     print("Updating csv data")
     
     try:
-        cmd_str = ("python heatmap.py --nolabels 1 {}.csv {}.png" .format(g.filename, g.filename)) 
+        cmd_str = ("{} {}.csv {}.png" .format(g.hmp_str, g.filename, g.filename)) 
         cmd = cmd_str.split()
         #print(cmd)
 
@@ -493,7 +602,7 @@ def update_waterfall():
         img1 = Image.open(fstr)
         #print("opened image file")
         w1,h1 = img1.size
-        #print("image size: width={}, height={}" .format(w1,h1))
+        print("image size: width={}, height={}" .format(w1,h1))
         #print("ax2 window size: width={}, height={}" .format(g.ax2_w, g.ax2_h))
         
         wpcnt = (g.ax2_w / float(w1))   

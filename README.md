@@ -5,9 +5,10 @@ rtl_power GUI to automate spectrum sweeping.
 Screenshot
 ------------
 
-![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/screenshot1.png)
 
-![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot3.png)
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/screenshot3.png)
+
 Screenshot of FM Band sweep using "--palette custom --rgbxy 0 255 255 25 150"
 
 Requirements

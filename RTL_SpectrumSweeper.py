@@ -36,6 +36,8 @@ import time
 import subprocess
 import datetime
 
+import numpy as np
+import tkinter as tk
 import PIL.Image as Image
 
 import matplotlib as mpl
@@ -44,11 +46,9 @@ import matplotlib.image as mpimg
 import matplotlib.gridspec as gridspec
 import matplotlib.animation as animation
 
-import numpy as np
-import tkinter as tk
 
 
-version = '1.1.0'
+version = '1.1.1'
 
 ###############################################################################
 #                                                                             #
@@ -65,7 +65,10 @@ version = '1.1.0'
     them from the git location to avoid duplication. Added support for 
     custom palettes (--palette and --rgbxy). Fixed automation interval to use
     milliseconds not seconds. Added check to avoid processing csv file if it
-    has not changed since last update.  
+    has not changed since last update. 
+    Version 1.1.1: (20190106) Added universal_newlines=True to the Popen
+    subprocess with .rstrip() to make the returned strings Windows and 
+    Linux compatible. 
 
 ############################################################################"""
 
@@ -232,7 +235,7 @@ def process_args():
     skip = 0
     g.opt_str = ""
     g.rtl_str = "rtl_power -P"
-    g.hmp_str = "python heatmap.py --nolabels"
+    g.hmp_str = ""
     
     
     for i in range(1, len(sys.argv)):
@@ -339,24 +342,27 @@ def start_rtl_power_process():
         cmd = g.rtl_str.split()
         print(cmd)
         
-        g.fig_title = ("RTL_SpectrumSweeper using: '{} {}' for '{}' started {}" .format(g.opt_str, g.hmp_str, g.rtl_str, datetime.datetime.now()))
+        g.fig_title = ("RTL_SpectrumSweeper using: '{} {}' for '{}' started {}" 
+            .format(g.opt_str, g.hmp_str, g.rtl_str, datetime.datetime.now()))
 
         g.rtl_proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT, 
+            universal_newlines=True)
 
         while(True):
-            rspn = (str(g.rtl_proc.stdout.readline()))
-            if (rspn[2:-5] == "[R82XX] PLL not locked!"):
-                print(rspn[2:-5])
+            rspn = (str(g.rtl_proc.stdout.readline())).rstrip()
+            if (rspn == "[R82XX] PLL not locked!"):
+                print(rspn)
                 break
             elif (rspn == "b''"):
                 print(rspn)
                 break
             else:
-                print(rspn[2:-5])
-        
+                print(rspn)
+
         print("done")
+        time.sleep(3)
     
     except Exception as e:
         
@@ -416,9 +422,7 @@ def initialize_plot():
         g.scrn_height_in = root.winfo_screenmmheight() / 25.4
         plt.rcParams["figure.figsize"] = [g.scrn_width_in, 
                                           g.scrn_height_in*0.9]
-        #plt.axis('off')
-        #plt.margins(0)
-        #plt.tight_layout()
+                                          
         
         g.fig = plt.figure(g.fig_title)
         gs = gridspec.GridSpec(g.rows, 1, figure=g.fig)
@@ -429,8 +433,6 @@ def initialize_plot():
         g.ax2.margins(0)
         g.ax1.set_facecolor('#000000')
         g.ax2.set_facecolor('#000000')
-        #g.ax1.set_axis_off()
-        #g.ax2.set_axis_off()
         g.ax1.set_aspect('auto')
         g.ax2.set_aspect('auto')
         g.fig.canvas.draw()
@@ -451,7 +453,6 @@ def initialize_plot():
         y_min = min(g.y_vals); y_max = max(g.y_vals)
         y_diff = y_max-y_min; y_margin = y_diff *0.10
         g.ax1.set_ylim([min(g.y_vals)-y_margin, max(g.y_vals)+y_margin])
-        #g.ax1.set_xlim([0, len(g.x_vals)])
         g.ax1.set_xlim([g.x_vals[0], g.x_vals[-1]])
         g.fig.canvas.draw()
                 
@@ -493,8 +494,6 @@ def animation_poll(i):
             try:
                 g.ax2.imshow(g.combined_image)
                 g.ax2.set_aspect('auto')
-                #g.ax2.set_axis_off()
-                #g.ax2.set_ylim([g.tmax, 0])
                 g.ax2.set_xlabel("FFT Bins (N)")
                 g.ax2.set_ylabel("Spectrum Sweeps (N)")
                 plt.tight_layout()
@@ -508,9 +507,9 @@ def animation_poll(i):
                 g.ax1.clear()
                 g.ax1.plot(g.x_vals, g.y_vals, color=g.trace_color, linewidth=0.75) 
                 y_min = min(g.y_vals); y_max = max(g.y_vals)
+                print("{:0.1f}, {:0.1f}" .format(y_min, y_max))
                 y_diff = y_max-y_min; y_margin = y_diff *0.10
                 g.ax1.set_ylim([min(g.y_vals)-y_margin, max(g.y_vals)+y_margin])
-                #g.ax1.set_xlim([0, len(g.x_vals)])
                 g.ax1.set_xlim([g.x_vals[0], g.x_vals[-1]])
                 g.ax1.set_xlabel("Frequency (MHz)")
                 g.ax1.set_ylabel("Power (dB)")
@@ -533,6 +532,8 @@ def animation_poll(i):
             print("rtl_power subprocess finished!")
             # stop the animation polling. 
             g.anim.event_source.stop()
+            
+        time.sleep(3)
 
     except Exception as e:
         
@@ -552,27 +553,22 @@ def update_csv_data():
     print("Updating csv data")
     
     try:
-        cmd_str = ("{} {}.csv {}.png" .format(g.hmp_str, g.filename, g.filename)) 
+        cmd_str = ("python heatmap.py --nolabels{} {}.csv {}.png" .format(g.hmp_str, g.filename, g.filename)) 
         cmd = cmd_str.split()
         #print(cmd)
 
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT,
+            universal_newlines=True)
         
         while(True):
-            rspn = (str(proc.stdout.readline()))
-            if (rspn == "b''"):
+            rspn = (str(proc.stdout.readline())).rstrip()
+            if (rspn == ""):
                 #print("done")
                 break
             else:
-                #print(rspn[2:-5])
-                if (rspn == ""):
-                    print("RTL_SpectrumSweeper requires a version of heatmap.py that supports")
-                    print("the --nolabels option. Copy the correct version from this location:")
-                    print("https://github.com/davesmotleyprojects/rtl-sdr-misc/tree/master/heatmap")
-                    print("into the directory with RTL_SpectrumSweeper.py and try again.")
-                    sys.exit()
+                #print(rspn)
                 pass
         
     except Exception as e:
@@ -695,18 +691,19 @@ def update_spectrum():
 
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.STDOUT, 
+            universal_newlines=True)
         
         g.x_vals = []; g.y_vals = []; 
         
         while(True):
-            rspn = (str(proc.stdout.readline()))
-            if (rspn == "b''"):
+            rspn = (str(proc.stdout.readline())).rstrip()
+            if (rspn == ""):
                 #print("done")
                 break
             else:
-                g.x_vals.append(float((rspn[2:-5]).split(",")[0]))
-                g.y_vals.append(float((rspn[2:-5]).split(",")[1]))
+                g.x_vals.append(float((rspn).split(",")[0]))
+                g.y_vals.append(float((rspn).split(",")[1]))
                 g.x_vals[-1] += g.offset
                 g.x_vals[-1] /= 1000000.0
                 #print(g.x_vals[-1], g.y_vals[-1])

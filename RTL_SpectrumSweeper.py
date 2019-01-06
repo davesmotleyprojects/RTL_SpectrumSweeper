@@ -35,6 +35,7 @@ import sys
 import time
 import subprocess
 import datetime
+import platform
 
 import numpy as np
 import tkinter as tk
@@ -48,7 +49,7 @@ import matplotlib.animation as animation
 
 
 
-version = '1.1.1'
+version = '1.1.2'
 
 ###############################################################################
 #                                                                             #
@@ -69,12 +70,21 @@ version = '1.1.1'
     Version 1.1.1: (20190106) Added universal_newlines=True to the Popen
     subprocess with .rstrip() to make the returned strings Windows and 
     Linux compatible. 
+    Version 1.1.2: (20190106) Added platform detection to remove use of 
+    "figure" in matplotlib calls as they are incompatible with Linux. 
+    
 
 ############################################################################"""
 
 print("\nRTL_SpectrumScanner.py version {}\n" .format(version))
 
 
+if ( (platform.system() == "Windows") or (platform.system() == "Linux") ):
+    print("Recognized Operating System as {}" .format(platform.system()))
+else:
+    print("Unrecognized Operating System: {}" .format(platform.system()))
+    print("This may or may not work...  finger's crossed.")
+            
 
 """############################################################################
 
@@ -103,11 +113,11 @@ print("\nRTL_SpectrumScanner.py version {}\n" .format(version))
 
 
 #cmd_str = "RTL_SpectrumSweeper -a 75 -s 15 --palette custom -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv"  
-cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette charolastra -c 25% -i 3s -g 28 -f 88M:108M:10k test.csv"         
-#cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette custom --rgbxy 0 255 255 25 150 -c 25% -i 3s -e 60m -g 28 -f 88M:108M:10k test.csv"        
+#cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette charolastra -c 25% -i 3s -g 28 -f 88M:108M:10k test.csv"         
+cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette custom --rgbxy 0 255 255 25 150 -c 25% -i 3s -e 60m -g 28 -f 88M:108M:10k test.csv"        
 #cmd_str = "RTL_SpectrumSweeper -a 200 -s 100 -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv" 
 
-print(cmd_str)
+print("\n" + cmd_str)
 sys.argv = cmd_str.split()
 '''
 
@@ -415,17 +425,21 @@ def initialize_plot():
         # sizes on Win10 has not been straightforward. This seems to be 
         # partly due to dpi scaling on my PC, but other values e.g. from 
         # get_window_extent don't seem to be correct at all. This needs 
-        # further investigation. 
+        # further investigation. The use of "figure" in rcParams and in
+        # GridSpec is not compatible with Linux. 
            
         root = tk.Tk()
         g.scrn_width_in = root.winfo_screenmmwidth() / 25.4
         g.scrn_height_in = root.winfo_screenmmheight() / 25.4
-        plt.rcParams["figure.figsize"] = [g.scrn_width_in, 
-                                          g.scrn_height_in*0.9]
-                                          
         
-        g.fig = plt.figure(g.fig_title)
-        gs = gridspec.GridSpec(g.rows, 1, figure=g.fig)
+        if (platform.system() == "Windows"):
+            plt.rcParams["figure.figsize"] = [g.scrn_width_in, g.scrn_height_in*0.9]
+            g.fig = plt.figure(g.fig_title)
+            gs = gridspec.GridSpec(g.rows, 1, figure=g.fig)
+        else:
+            g.fig = plt.figure(g.fig_title)
+            gs = gridspec.GridSpec(g.rows, 1)
+            
         g.ax1 = g.fig.add_subplot(gs[0,0])
         g.ax2 = g.fig.add_subplot(gs[1:,0])
         

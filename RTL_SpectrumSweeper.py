@@ -60,6 +60,7 @@ version = '1.1.2'
 """############################################################################
 
     Version 1.0.0: (20181229) Initial release.
+    
     Version 1.1.0: (20190105) Added a debug section to add args as though it
     was executed from a command prompt when debugging with an IDE. Added an
     automatic file downloader for heatmap.py and flatten.py, and removed
@@ -67,11 +68,22 @@ version = '1.1.2'
     custom palettes (--palette and --rgbxy). Fixed automation interval to use
     milliseconds not seconds. Added check to avoid processing csv file if it
     has not changed since last update. 
+    
     Version 1.1.1: (20190106) Added universal_newlines=True to the Popen
     subprocess with .rstrip() to make the returned strings Windows and 
     Linux compatible. 
+    
     Version 1.1.2: (20190106) Added platform detection to remove use of 
     "figure" in matplotlib calls as they are incompatible with Linux. 
+    
+    Version 2.0.0: (20190106) Changed the RGBXY formatting to be a single
+    sys.arg value separated by colons (e.g. 000:255:255:015:140). This 
+    breaks backwards compatibility. Also added a --ratio argument that 
+    allows the size of the spectrum vs. waterfall to be adjusted. Uses two
+    values separated by a colon (e.g. 3:1) First number is total rows, 
+    second number is the number of rows allocated for the spectrum. Remaining
+    rows are for the waterfall. 
+    
     
 
 ############################################################################"""
@@ -99,11 +111,11 @@ else:
 '''
 # here are some color codes for reference. copy these into a cmd_str to use. 
 # '--palette custom'                                # default: BRIGHT YELLOW
-# '--palette custom --rgbxy 0 255 255 15 140'       # CYAN
-# '--palette custom --rgbxy 127 255 212 15 110'     # AQUAMARINE
-# '--palette custom --rgbxy 255 20 147 10 110'      # HOT_PINK
-# '--palette custom --rgbxy 160 32 240 0 110'       # DEEP_PURPLE
-# '--palette custom --rgbxy 0 255 127 10 140'       # SPRING_GREEN
+# '--palette custom --rgbxy 000:255:255:015:140'    # CYAN
+# '--palette custom --rgbxy 127:255:212:015:110'    # AQUAMARINE
+# '--palette custom --rgbxy 255:020:147:010:110'    # HOT_PINK
+# '--palette custom --rgbxy 160:032:240:000:110'    # DEEP_PURPLE
+# '--palette custom --rgbxy 000:255:127:010:140'    # SPRING_GREEN
 
 # some rtl_power settings for reference
 # '-i 3s -e 60m -g 28 -f 88M:108M:5k test.csv'      # 1 hours scan of FM Stations 
@@ -114,7 +126,9 @@ else:
 
 #cmd_str = "RTL_SpectrumSweeper -a 75 -s 15 --palette custom -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv"  
 #cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette charolastra -c 25% -i 3s -g 28 -f 88M:108M:10k test.csv"         
-cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette custom --rgbxy 0 255 255 25 150 -c 25% -i 3s -e 60m -g 28 -f 88M:108M:10k test.csv"        
+#cmd_str = "RTL_SpectrumSweeper -a 101 -s 101 --palette custom --rgbxy 0:255:255:25:150 -c 25% -i 3s -e 60m -g 28 -f 88M:108M:10k test.csv"   
+#cmd_str = "RTL_SpectrumSweeper -a 151 -s 201 -o -125000000 --ratio 5:4 --palette custom --rgbxy 0:255:255:25:150 -i 3s -g 28 -f 132000k:132200k:100 test.csv"    
+cmd_str = "RTL_SpectrumSweeper -a 151 -s 201 -o -125000000 --ratio 6:2 --palette custom -i 3s -g 28 -f 132000k:132200k:100 201901061724.csv"    
 #cmd_str = "RTL_SpectrumSweeper -a 200 -s 100 -i 3s -e 60m -g 28 -f 88M:108M:5k test.csv" 
 
 print("\n" + cmd_str)
@@ -175,7 +189,7 @@ class global_vars:
     def __init__(self):
 
         self.filename = ""
-        self.sweeptime = 3
+        self.sweeptime = 0
 
         self.opt_str = ""
         self.rtl_str = ""
@@ -205,7 +219,7 @@ class global_vars:
         self.tmax = 0.0
 
         self.fig_title = ""
-        self.rows = 3
+        self.rows = [6,2]
         self.fig = None
         self.ax1 = None
         self.ax2 = None
@@ -271,20 +285,28 @@ def process_args():
                 print("Set offset: {}" .format(g.offset))
                 skip=1
                 pass
+            elif (arg == "--ratio"):
+                g.opt_str += str(" --ratio " + sys.argv[i+1])
+                g.rows[0] = int(((sys.argv[i+1]).split(":"))[0])
+                g.rows[1] = int(((sys.argv[i+1]).split(":"))[1])
+                print("Set ratio: {}" .format(g.rows))
+                skip=1
+                pass
             elif (arg == "--palette"):
                 g.hmp_str += str(" --palette " + sys.argv[i+1])
                 skip=1
                 pass
             elif (arg == "--rgbxy"):
-                R = int(sys.argv[i+1]); G = int(sys.argv[i+2]); B = int(sys.argv[i+3]);
-                g.hmp_str += str(" --rgbxy " + sys.argv[i+1])
-                g.hmp_str += str(" " + sys.argv[i+2])
-                g.hmp_str += str(" " + sys.argv[i+3])
-                g.hmp_str += str(" " + sys.argv[i+4])
-                g.hmp_str += str(" " + sys.argv[i+5])
+                R,G,B,X,Y = (str(sys.argv[i+1])).split(":")
+                g.hmp_str += str(" --rgbxy " + R + " " + G + " " + B)
+                g.hmp_str += str(" " + X + " " + Y)
+                R,G,B,X,Y = (int(R), int(G), int(B), int(X), int(Y))
                 g.trace_color = ("#{:02X}{:02X}{:02X}" .format(R,G,B))
                 print("Trace Color: {}" .format(g.trace_color))
-                skip=5
+                skip=1
+                if int(X) >= int(Y):
+                    print("--rbgxy index start X must be < index stop Y")
+                    sys.exit(2)
                 pass
             elif (arg == "-P"):
                 #do nothing. This is always added by default
@@ -435,13 +457,19 @@ def initialize_plot():
         if (platform.system() == "Windows"):
             plt.rcParams["figure.figsize"] = [g.scrn_width_in, g.scrn_height_in*0.9]
             g.fig = plt.figure(g.fig_title)
-            gs = gridspec.GridSpec(g.rows, 1, figure=g.fig)
+            gs = gridspec.GridSpec(g.rows[0], 1, figure=g.fig)
         else:
             g.fig = plt.figure(g.fig_title)
-            gs = gridspec.GridSpec(g.rows, 1)
+            gs = gridspec.GridSpec(g.rows[0], 1)
             
-        g.ax1 = g.fig.add_subplot(gs[0,0])
-        g.ax2 = g.fig.add_subplot(gs[1:,0])
+        #g.ax1 = g.fig.add_subplot(gs[0:g.rows[1],0])
+        #g.ax2 = g.fig.add_subplot(gs[(g.rows[0]-g.rows[1]):,0])
+        
+        print("\n{}, {}, {}" .format(g.rows, g.rows[0], g.rows[1]))
+        g.ax1 = g.fig.add_subplot(gs[0:g.rows[1],0])
+        g.ax2 = g.fig.add_subplot(gs[g.rows[1]:g.rows[0],0])
+        #g.ax1 = g.fig.add_subplot(gs[0:1,0])
+        #g.ax2 = g.fig.add_subplot(gs[1:3,0])
         
         g.ax1.margins(0)
         g.ax2.margins(0)

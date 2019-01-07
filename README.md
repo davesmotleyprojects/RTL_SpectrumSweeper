@@ -5,10 +5,9 @@ rtl_power GUI to automate spectrum sweeping.
 Screenshot
 ------------
 
-![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/screenshot1.png)
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot1.png)
 
-![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/screenshot3.png)
-
+![Screenshot](https://davesmotleyprojects.github.io/RTL_SpectrumSweeper/RTL_SpectrumSweeper_screenshot3.png)
 Screenshot of FM Band sweep using "--palette custom --rgbxy 0 255 255 25 150"
 
 Requirements
@@ -45,11 +44,17 @@ Start RTL_SpectrumSweeper by running    ``python RTL_SpectrumSweeper.py [opt1] [
 > -o (set the frequency offset value) valid values are integer values in Hz. (default = 0).
    - This value will rescale the x-axis frequency values. (that's it). This is useful when using an upconverter. 
      For example, when using a "Ham It Up" the correct value would be '-o -125000000'.  
+	 
+> --ratio (set total_rows:spectrum_rows) valid values are integer values separated by colon. (default = '3:1').
+   - The first value total_rows sets the total number of rows in the plot window. 
+   - The second value spectrum_rows defines the number of rows allocated to the spectrum plot. 
+   - The rows allocated to the waterfall will be total_rows - spectrum_rows. 
+   - The total_rows must be > spectrum_rows    
 
 > --palette (set color palette) valid values are "default, extended, charolastra, twente, custom". 
    - To use the --rgbxy settings the palette must be set to "custom"
 
-> --rgbxy (sets R G B color, Contrast, Brightness) valid values are all [0-255]. 
+> --rgbxy (sets R:G:B:X:Y). All values are [0-255] separated by colons. 
    - R G B values correspond to RGB color codes. (e.g. "0 255 255" = CYAN, "0 255 127" = SPRING GREEN)
    - X sets contrast (color start index). 
    - Y sets brightness (color stop index). 
